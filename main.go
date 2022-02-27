@@ -13,9 +13,10 @@ func main() {
 	authorizer := client.ClientAuthorizer()
 	go client.CliInteractor(authorizer)
 
+	//register app https://my.telegram.org/auth?to=apps
 	const (
-		apiId   = <appId>
-		apiHash = <apiHash>
+		apiId   = 0  // set appId
+		apiHash = "" //set apiHash
 	)
 
 	authorizer.TdlibParameters <- &client.TdlibParameters{
@@ -57,7 +58,7 @@ func main() {
 		tgLink = strings.TrimSpace(tgLink)
 		var chat *client.Chat
 
-		if strings.HasPrefix(tgLink, "https://t.me") {
+		if strings.HasPrefix(tgLink, "https://t.me/+") {
 			chat, err = tdlibClient.JoinChatByInviteLink(&client.JoinChatByInviteLinkRequest{
 				InviteLink: tgLink,
 			})
@@ -66,9 +67,16 @@ func main() {
 				continue
 			}
 		} else {
+			if strings.Contains(tgLink, "t.me/") {
+				tgLink = strings.Split(tgLink, "t.me/")[1]
+			}
 			chat, err = tdlibClient.SearchPublicChat(&client.SearchPublicChatRequest{
 				Username: tgLink,
 			})
+			if err != nil {
+				log.Printf("Can't find chat %s: %s\n", tgLink, err)
+				continue
+			}
 		}
 
 		log.Printf("chat: %v", chat.Title)
@@ -79,7 +87,7 @@ func main() {
 		})
 
 		if err != nil {
-			log.Printf("Can't get hostory of chat %s: %s", chat.Title, err)
+			log.Printf("Can't get history of chat %s: %s", chat.Title, err)
 			continue
 		}
 
